@@ -1,0 +1,60 @@
+# Git ignore file for FX-API-DEMO
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+
+# IntelliJ IDEA
+.idea/
+.claude/
+*.iml
+*.docx
+*.txt
+*.iws
+*.ipr
+out/
+
+# NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Log files
+*.log
+
+# Temp files
+*.tmp
+*.bak
+*.swp
+*~
+
+# API Keys (Important: Never commit API keys)
+**/application.properties
+**/application.yml
+**/*.env
+
+# Test output
+test-output/
