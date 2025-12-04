@@ -85,7 +85,7 @@ protected static String SECRET_KEY = "your-secret-key";
 Configure in `WebSocketApiTest.java`:
 
 ```java
-private static final String WS_URL = "wss://fxapi.example.com/openapi/quote/ws/v1";
+private static final String WS_URL = "wss://www.remifx-test.ai/openapi/quote/ws/v1";
 ```
 
 ## Running Tests
