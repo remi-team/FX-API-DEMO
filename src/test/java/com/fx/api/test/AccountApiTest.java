@@ -207,8 +207,8 @@ public class AccountApiTest extends BaseTest {
             Map<String, String> params = new HashMap<>();
             params.put("tokenId", "USTSIT");
             params.put("clientOrderId", String.valueOf(System.currentTimeMillis()));
-            params.put("withdrawQuantity", "0.001");
-            params.put("chainType", "BTC");
+            params.put("withdrawQuantity", "10000");
+            params.put("chainType", "SOL");
 
             // WARNING: This will create a real withdrawal request
             // Comment out in production or use test environment
