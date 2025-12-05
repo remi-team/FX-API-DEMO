@@ -54,7 +54,7 @@ public class WebSocketUserDataTest extends BaseTest {
         lastMessage = new AtomicReference<>();
 
         // TODO: Replace with actual listenKey obtained from REST API
-        String listenKey = "qCwsNEHCfRicqCjdNBHYSLxiejDwfswjPLCdzaokvRECNgYLeKUQvrTikHAQWvNY";
+        String listenKey = "your listenKey";
         String wsUrl = WS_BASE_URL + listenKey;
 
         logger.info("Connecting to WebSocket URL: {}", wsUrl);
