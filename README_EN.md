@@ -7,6 +7,7 @@ This project is a Java testing framework implemented based on the FX Trading Pla
 This project provides:
 - Complete REST API tests (market data, account management, order operations)
 - Complete WebSocket API tests (real-time market data subscriptions)
+- Complete WebSocket user data stream tests (account updates, order updates)
 - Code examples and documentation
 
 ## Project Structure
@@ -28,11 +29,13 @@ FX-API-DEMO/
 │   │                       ├── FxWebSocketClient.java  # WebSocket client
 │   │                       ├── WebSocketMessageHandler.java  # Message handler interface
 │   │                       └── model/
-│   │                           ├── TickerData.java     # Ticker data model
-│   │                           ├── TradeData.java      # Trade data model
-│   │                           ├── KlineData.java      # Kline data model
-│   │                           ├── DepthData.java      # Depth data model
-│   │                           └── IndexData.java      # Index data model
+│   │                           ├── TickerData.java        # Ticker data model
+│   │                           ├── TradeData.java         # Trade data model
+│   │                           ├── KlineData.java         # Kline data model
+│   │                           ├── DepthData.java         # Depth data model
+│   │                           ├── IndexData.java         # Index data model
+│   │                           ├── AccountInfoData.java   # Account info data model
+│   │                           └── ExecutionReportData.java  # Execution report data model
 │   └── test/
 │       └── java/
 │           └── com/
@@ -44,11 +47,13 @@ FX-API-DEMO/
 │                           ├── MarketDataApiTest.java       # Market data API tests
 │                           ├── AccountApiTest.java          # Account API tests
 │                           ├── OrderApiTest.java            # Order API tests
-│                           ├── UserDataStreamApiTest.java   # User data stream API tests
-│                           └── WebSocketApiTest.java        # WebSocket API tests (20 test cases)
+│                           ├── UserDataStreamApiTest.java   # User data stream API tests (REST)
+│                           ├── WebSocketApiTest.java        # WebSocket API tests (20 test cases)
+│                           └── WebSocketUserDataTest.java   # WebSocket user data stream tests (10 test cases)
 ├── pom.xml
 ├── README.md
-└── websocket.txt                                           # WebSocket API documentation
+├── websocket.txt                                           # WebSocket market data API documentation
+└── websocketUserData.txt                                   # WebSocket user data stream API documentation
 ```
 
 ## Technology Stack
@@ -85,7 +90,17 @@ protected static String SECRET_KEY = "your-secret-key";
 Configure in `WebSocketApiTest.java`:
 
 ```java
-private static final String WS_URL = "wss://fxapi.example.com/openapi/quote/ws/v1";
+private static final String WS_URL = "wss://www.remifx-test.ai/openapi/quote/ws/v1";
+```
+
+#### WebSocket User Data Stream Configuration
+Configure in `WebSocketUserDataTest.java`:
+
+```java
+private static final String WS_BASE_URL = "wss://www.remifx-test.ai/openapi/ws/";
+// Obtain listenKey from REST API first
+String listenKey = "YOUR_LISTEN_KEY";
+String wsUrl = WS_BASE_URL + listenKey;
 ```
 
 ## Running Tests
@@ -118,7 +133,7 @@ mvn test -Dtest=UserDataStreamApiTest
 ### Run WebSocket API Tests
 
 ```bash
-# Run all WebSocket tests
+# Run all WebSocket market data tests
 mvn test -Dtest=WebSocketApiTest
 
 # Run specific WebSocket test cases
@@ -126,13 +141,20 @@ mvn test -Dtest=WebSocketApiTest#testSubscribeTicker
 mvn test -Dtest=WebSocketApiTest#testSubscribeKline1m
 mvn test -Dtest=WebSocketApiTest#testSubscribeDepth
 mvn test -Dtest=WebSocketApiTest#testHeartbeat
+
+# Run WebSocket user data stream tests
+mvn test -Dtest=WebSocketUserDataTest
+
+# Run specific user data stream test cases
+mvn test -Dtest=WebSocketUserDataTest#testParseAccountInfoDetailed
+mvn test -Dtest=WebSocketUserDataTest#testParseExecutionReportDetailed
 ```
 
 ---
 
 # WebSocket API Usage Guide
 
-## Features
+## WebSocket Market Data Features
 
 - **Real-time Ticker Subscription (Ticker/Realtimes)** - 24-hour complete ticker information, refreshed every second
 - **Trade Subscription (Trade)** - Push notification for each trade
@@ -141,6 +163,42 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 - **Incremental Depth Subscription (DiffDepth)** - Order book change notifications
 - **Index Data Subscription (Index)** - Option and futures index data
 - **Heartbeat Mechanism (Ping/Pong)** - Keep connection alive
+
+## WebSocket User Data Stream Features
+
+- **Account Update Push (outboundAccountInfo)** - Real-time account balance changes and trading permission status updates
+- **Order Update Push (executionReport)** - Real-time order status changes (new, partially filled, filled, canceled, rejected)
+- **Auto Push** - No subscription required, automatically receives events after connection
+- **Validity Management** - listenKey valid for 60 minutes, requires periodic renewal
+- **24-Hour Connection Limit** - Single connection can be maintained for up to 24 hours
+
+
+
+#### 2. Order Update (executionReport)
+Pushed when order status changes:
+```json
+{
+  "e": "executionReport",
+  "E": 1499405658658,
+  "s": "ETHBTC",
+  "c": 1000087761,
+  "S": "BUY",
+  "o": "LIMIT",
+  "X": "NEW",  // Order status
+  "i": 4293153,
+  "q": "1.00000000",
+  "p": "0.10264410",
+  "z": "0.00000000",  // Cumulative filled quantity
+  "Z": "0.00000000"   // Cumulative quote quantity
+}
+```
+
+**Order Status Types:**
+- `NEW` - New order
+- `PARTIALLY_FILLED` - Partially filled
+- `FILLED` - Fully filled
+- `CANCELED` - Canceled
+- `REJECTED` - Rejected
 
 
 
@@ -217,7 +275,9 @@ To enable these tests, uncomment the relevant code and ensure they run in a test
 2. **Test Environment**: Run tests in test environment to avoid affecting production data
 3. **Rate Limits**: Be aware of API rate limits to avoid triggering 429 errors
 4. **Time Synchronization**: Ensure system time is accurate to avoid signature verification failures
-5. **WebSocket Heartbeat**: Send ping every 30-60 seconds to prevent server disconnection
+5. **WebSocket Heartbeat**: Send ping every 30-60 seconds for market data stream to prevent server disconnection
+6. **listenKey Management**: User data stream listenKey is valid for 60 minutes, recommend renewing every 30 minutes
+7. **Connection Duration Limit**: WebSocket user data stream connections are only valid for 24 hours, reconnection required
 
 ## License
 
@@ -225,9 +285,15 @@ This project is for learning and testing purposes only.
 
 ## Changelog
 
+### v1.0.2 (2025-12-05)
+- Added complete WebSocket user data stream support
+- Added 10 WebSocket user data stream test cases
+- Added user data stream data model classes (AccountInfoData, ExecutionReportData)
+- Updated README documentation with detailed WebSocket user data stream usage guide
+
 ### v1.0.1 (2025-12-04)
-- Added complete WebSocket API support
-- Added 20 WebSocket test cases
+- Added complete WebSocket market data API support
+- Added 20 WebSocket market data test cases
 - Added data model classes (TickerData, TradeData, KlineData, DepthData, IndexData)
 - Updated README documentation with detailed WebSocket API usage guide
 
@@ -237,9 +303,9 @@ This project is for learning and testing purposes only.
 - REST API test cases
 
 
-## WebSocket Test Cases
+## WebSocket Market Data Test Cases
 
-The project includes 20 WebSocket test cases (located in `src/test/java/com/fx/api/test/WebSocketApiTest.java`):
+The project includes 20 WebSocket market data test cases (located in `src/test/java/com/fx/api/test/WebSocketApiTest.java`):
 
 1. **testSubscribeTicker** - Subscribe to single trading pair ticker
 2. **testSubscribeMultipleTickers** - Subscribe to multiple trading pair tickers
@@ -261,6 +327,21 @@ The project includes 20 WebSocket test cases (located in `src/test/java/com/fx/a
 18. **testReconnection** - Reconnection mechanism test
 19. **testHighFrequencyData** - High-frequency data test
 20. **testCompleteWorkflow** - Complete workflow test
+
+## WebSocket User Data Stream Test Cases
+
+The project includes 10 WebSocket user data stream test cases (located in `src/test/java/com/fx/api/test/WebSocketUserDataTest.java`):
+
+1. **testUserDataStreamConnection** - User data stream connection test
+2. **testReceiveAccountInfoUpdate** - Receive account info updates
+3. **testReceiveOrderUpdate** - Receive order updates
+4. **testLongRunningConnection** - Long-running connection test (receive multiple events)
+5. **testParseAccountInfoDetailed** - Parse account info event (detailed field verification)
+6. **testParseExecutionReportDetailed** - Parse execution report (detailed field verification)
+7. **testOrderStatusTypes** - Test order status types
+8. **testMultipleBalanceUpdates** - Test multiple balance updates
+9. **guideObtainListenKey** - Guide on how to obtain listenKey
+10. **testConnectionStability24Hours** - 24-hour connection stability test
 
 ## WebSocket Error Codes
 

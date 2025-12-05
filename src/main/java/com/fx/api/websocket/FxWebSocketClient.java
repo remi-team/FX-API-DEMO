@@ -45,11 +45,12 @@ public class FxWebSocketClient extends WebSocketClient {
         logger.debug("Received message: {}", message);
 
         try {
-            JsonObject jsonObject = gson.fromJson(message, JsonObject.class);
-
-            // Handle pong response
-            if (jsonObject.has("pong")) {
-                logger.debug("Received pong: {}", jsonObject.get("pong").getAsLong());
+            if (message.startsWith("{")){
+                JsonObject jsonObject = gson.fromJson(message, JsonObject.class);
+                // Handle pong response
+                if (jsonObject.has("pong")) {
+                    logger.debug("Received pong: {}", jsonObject.get("pong").getAsLong());
+                }
             }
 
             if (messageHandler != null) {
