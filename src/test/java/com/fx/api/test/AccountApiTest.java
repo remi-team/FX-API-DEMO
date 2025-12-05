@@ -189,8 +189,8 @@ public class AccountApiTest extends BaseTest {
     public void testBalanceFlowWithTimeRange() {
         try {
             Map<String, String> params = new HashMap<>();
-            params.put("startTime", "1578640809195");
-            params.put("endTime", "1679640809195");
+            params.put("startTime", "1764900963000");
+            params.put("endTime",   "1764900962000");
 
             String response = apiClient.postWithSignature("/openapi/v1/balance_flow", params);
             assertNotNull(response);

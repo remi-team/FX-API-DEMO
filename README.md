@@ -7,6 +7,7 @@
 本项目提供：
 - 完整的 REST API 测试（市场数据、账户管理、订单操作）
 - 完整的 WebSocket API 测试（实时市场数据订阅）
+- 完整的 WebSocket 用户数据流测试（账户更新、订单更新）
 - 代码示例和文档
 
 ## 项目结构
@@ -28,11 +29,13 @@ FX-API-DEMO/
 │   │                       ├── FxWebSocketClient.java  # WebSocket客户端
 │   │                       ├── WebSocketMessageHandler.java  # 消息处理接口
 │   │                       └── model/
-│   │                           ├── TickerData.java     # Ticker数据模型
-│   │                           ├── TradeData.java      # 交易数据模型
-│   │                           ├── KlineData.java      # K线数据模型
-│   │                           ├── DepthData.java      # 深度数据模型
-│   │                           └── IndexData.java      # 指数数据模型
+│   │                           ├── TickerData.java        # Ticker数据模型
+│   │                           ├── TradeData.java         # 交易数据模型
+│   │                           ├── KlineData.java         # K线数据模型
+│   │                           ├── DepthData.java         # 深度数据模型
+│   │                           ├── IndexData.java         # 指数数据模型
+│   │                           ├── AccountInfoData.java   # 账户信息数据模型
+│   │                           └── ExecutionReportData.java  # 订单执行报告数据模型
 │   └── test/
 │       └── java/
 │           └── com/
@@ -44,11 +47,13 @@ FX-API-DEMO/
 │                           ├── MarketDataApiTest.java       # 市场数据API测试
 │                           ├── AccountApiTest.java          # 账户API测试
 │                           ├── OrderApiTest.java            # 订单API测试
-│                           ├── UserDataStreamApiTest.java   # 用户数据流API测试
-│                           └── WebSocketApiTest.java        # WebSocket API测试 (20个测试用例)
+│                           ├── UserDataStreamApiTest.java   # 用户数据流API测试 (REST)
+│                           ├── WebSocketApiTest.java        # WebSocket API测试 (20个测试用例)
+│                           └── WebSocketUserDataTest.java   # WebSocket用户数据流测试 (10个测试用例)
 ├── pom.xml
 ├── README.md
-└── websocket.txt                                           # WebSocket API文档
+├── websocket.txt                                           # WebSocket市场数据API文档
+└── websocketUserData.txt                                   # WebSocket用户数据流API文档
 ```
 
 ## 技术栈
@@ -88,6 +93,16 @@ protected static String SECRET_KEY = "your-secret-key";
 private static final String WS_URL = "wss://www.remifx-test.ai/openapi/quote/ws/v1";
 ```
 
+#### WebSocket 用户数据流配置
+在 `WebSocketUserDataTest.java` 中配置:
+
+```java
+private static final String WS_BASE_URL = "wss://www.remifx-test.ai/openapi/ws/";
+// 需要先通过 REST API 获取 listenKey
+String listenKey = "YOUR_LISTEN_KEY";
+String wsUrl = WS_BASE_URL + listenKey;
+```
+
 ## 运行测试
 
 ### 运行所有测试
@@ -118,7 +133,7 @@ mvn test -Dtest=UserDataStreamApiTest
 ### 运行 WebSocket API 测试
 
 ```bash
-# 运行所有 WebSocket 测试
+# 运行所有 WebSocket 市场数据测试
 mvn test -Dtest=WebSocketApiTest
 
 # 运行特定 WebSocket 测试用例
@@ -126,23 +141,14 @@ mvn test -Dtest=WebSocketApiTest#testSubscribeTicker
 mvn test -Dtest=WebSocketApiTest#testSubscribeKline1m
 mvn test -Dtest=WebSocketApiTest#testSubscribeDepth
 mvn test -Dtest=WebSocketApiTest#testHeartbeat
+
+# 运行 WebSocket 用户数据流测试
+mvn test -Dtest=WebSocketUserDataTest
+
+# 运行特定用户数据流测试用例
+mvn test -Dtest=WebSocketUserDataTest#testParseAccountInfoDetailed
+mvn test -Dtest=WebSocketUserDataTest#testParseExecutionReportDetailed
 ```
-
----
-
-# WebSocket API 使用指南
-
-## 功能特性
-
-- **实时行情订阅（Ticker/Realtimes）** - 24小时完整ticker信息，逐秒刷新
-- **逐笔交易订阅（Trade）** - 每笔成交推送
-- **K线数据订阅（Kline）** - 支持多种时间周期（1m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d, 1w, 1M）
-- **深度数据订阅（Depth）** - 订单簿快照（300档，每300ms更新）
-- **增量深度订阅（DiffDepth）** - 订单簿变化推送
-- **指数数据订阅（Index）** - 期权和期货指数数据
-- **心跳机制（Ping/Pong）** - 保持连接活跃
-
-
 
 
 # REST API 使用指南
@@ -217,7 +223,9 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 2. **测试环境**: 建议在测试环境中运行测试，避免影响生产数据
 3. **频率限制**: 注意API的频率限制，避免触发429错误
 4. **时间同步**: 确保系统时间准确，避免签名验证失败
-5. **WebSocket心跳**: 每30-60秒发送一次ping，避免连接被服务器断开
+5. **WebSocket心跳**: 市场数据流每30-60秒发送一次ping，避免连接被服务器断开
+6. **listenKey管理**: 用户数据流的 listenKey 有效期为60分钟，建议每30分钟续期一次
+7. **连接时长限制**: WebSocket 用户数据流连接仅在24小时内有效，需要重新连接
 
 ## 许可证
 
@@ -225,9 +233,15 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 
 ## 更新日志
 
+### v1.0.2 (2025-12-05)
+- 新增完整的 WebSocket 用户数据流支持
+- 新增 10 个 WebSocket 用户数据流测试用例
+- 新增用户数据流数据模型类（AccountInfoData, ExecutionReportData）
+- 更新 README 文档，添加详细的 WebSocket 用户数据流使用指南
+
 ### v1.0.1 (2025-12-04)
-- 新增完整的 WebSocket API 支持
-- 新增 20 个 WebSocket 测试用例
+- 新增完整的 WebSocket 市场数据 API 支持
+- 新增 20 个 WebSocket 市场数据测试用例
 - 新增数据模型类（TickerData, TradeData, KlineData, DepthData, IndexData）
 - 更新 README 文档，添加详细的 WebSocket API 使用指南
 
@@ -237,9 +251,9 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 - REST API 测试用例
 
 
-## WebSocket 测试用例
+## WebSocket 市场数据测试用例
 
-项目包含20个 WebSocket 测试用例（位于 `src/test/java/com/fx/api/test/WebSocketApiTest.java`）：
+项目包含20个 WebSocket 市场数据测试用例（位于 `src/test/java/com/fx/api/test/WebSocketApiTest.java`）：
 
 1. **testSubscribeTicker** - 订阅单个交易对ticker
 2. **testSubscribeMultipleTickers** - 订阅多个交易对ticker
@@ -262,6 +276,42 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 19. **testHighFrequencyData** - 高频数据测试
 20. **testCompleteWorkflow** - 完整工作流测试
 
+## WebSocket 用户数据流测试用例
+
+项目包含10个 WebSocket 用户数据流测试用例（位于 `src/test/java/com/fx/api/test/WebSocketUserDataTest.java`）：
+
+1. **testUserDataStreamConnection** - 用户数据流连接测试
+2. **testReceiveAccountInfoUpdate** - 接收账户信息更新
+3. **testReceiveOrderUpdate** - 接收订单更新
+4. **testLongRunningConnection** - 长时间连接测试（接收多个事件）
+5. **testParseAccountInfoDetailed** - 解析账户信息事件（详细字段验证）
+6. **testParseExecutionReportDetailed** - 解析订单执行报告（详细字段验证）
+7. **testOrderStatusTypes** - 测试订单状态类型
+8. **testMultipleBalanceUpdates** - 测试多个余额更新
+9. **guideObtainListenKey** - 如何获取 listenKey 指南
+10. **testConnectionStability24Hours** - 24小时连接稳定性测试
+---
+
+# WebSocket API 使用指南
+
+## WebSocket 市场数据功能特性
+
+- **实时行情订阅（Ticker/Realtimes）** - 24小时完整ticker信息，逐秒刷新
+- **逐笔交易订阅（Trade）** - 每笔成交推送
+- **K线数据订阅（Kline）** - 支持多种时间周期（1m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 12h, 1d, 1w, 1M）
+- **深度数据订阅（Depth）** - 订单簿快照（300档，每300ms更新）
+- **增量深度订阅（DiffDepth）** - 订单簿变化推送
+- **指数数据订阅（Index）** - 期权和期货指数数据
+- **心跳机制（Ping/Pong）** - 保持连接活跃
+
+## WebSocket 用户数据流功能特性
+
+- **账户更新推送（outboundAccountInfo）** - 实时接收账户余额变化、交易权限状态更新
+- **订单更新推送（executionReport）** - 实时接收订单状态变化（新建、部分成交、完全成交、取消、拒绝）
+- **自动推送** - 无需订阅，连接后自动接收相关事件
+- **有效期管理** - listenKey 60分钟有效，需定期续期
+- **24小时连接限制** - 单个连接最多保持24小时
+
 ## WebSocket 错误码
 
 | 错误码 | 说明 |
@@ -278,3 +328,12 @@ mvn test -Dtest=WebSocketApiTest#testHeartbeat
 | -100010 | 无效的symbols |
 
 ---
+
+**订单状态类型：**
+- `NEW` - 新订单
+- `PARTIALLY_FILLED` - 部分成交
+- `FILLED` - 完全成交
+- `CANCELED` - 已取消
+- `REJECTED` - 已拒绝
+
+
